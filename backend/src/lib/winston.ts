@@ -13,21 +13,27 @@ const logtail = new Logtail(config.LOGTAIL_TOKEN, {
   endpoint: config.LOGTAIL_HOST,
 });
 
-if (config.NODE_ENV === 'PROD') {
+if (config.NODE_ENV === 'production') {
   transportation.push(new LogtailTransport(logtail));
 }
 
-const { colorize, combine, timestamp, label, printf } = format;
+const { colorize, combine, timestamp, label, printf, metadata } = format;
 
-if (config.NODE_ENV === 'DEV') {
+if (config.NODE_ENV === 'development') {
   transportation.push(
     new transports.Console({
       format: combine(
         colorize({ all: true }),
-        label(),
+        label({ label: `${config.NODE_ENV.toUpperCase()}-SERVER` }),
         timestamp({ format: 'DD MMMM hh:mm:ss A' }),
-        printf(({ level, message, timestamp }) => {
-          return `${timestamp} [${level}]: ${message}`;
+        metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
+        printf(({ level, label, message, timestamp, metadata }) => {
+          const metaStr =
+            metadata && Object.keys(metadata).length
+              ? `\n${JSON.stringify(metadata, null, 2)}`
+              : '';
+
+          return `${timestamp} [${label}] [${level}]: ${message} ${metaStr}`;
         })
       ),
     })

@@ -8,7 +8,7 @@ const CorsOptions: CorsOptions = {
       callback(null, true);
     } else {
       callback(
-        config.NODE_ENV === 'DEV' ? null : new Error('Not Allowed by CORS')
+        config.NODE_ENV === 'development' ? null : new Error('Not Allowed by CORS')
       );
     }
   },

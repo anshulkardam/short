@@ -7,6 +7,8 @@ import router from '@/routes';
 import CorsOptions from '@/lib/cors';
 import cors from 'cors';
 import { logger, logtail } from '@/lib/winston';
+import { connectToDatabase, disconnectDatabase } from './lib/mongoose';
+import { ErrorHandler } from './utils/CustomError';
 
 const app = express();
 
@@ -26,14 +28,18 @@ app.use(compression());
 
 (async function (): Promise<void> {
   try {
+    await connectToDatabase();
+
     app.use('/', router);
+
+    app.use(ErrorHandler);
 
     app.listen(config.PORT, () => {
       logger.info(`Server Listening at http://localhost:${config.PORT}`);
     });
   } catch (err) {
     logger.error('Failed to start the server', err);
-    if (config.NODE_ENV === 'PROD') {
+    if (config.NODE_ENV === 'production') {
       process.exit(1);
     }
   }
@@ -41,6 +47,8 @@ app.use(compression());
 
 const serverTermination = async (signal: NodeJS.Signals): Promise<void> => {
   try {
+    await disconnectDatabase();
+
     logger.info('SERVER SHUTDOWN', signal);
 
     logtail.flush();
